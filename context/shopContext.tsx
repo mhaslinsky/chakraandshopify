@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Client from "shopify-buy";
 
 type ShopContextObj = {
-  product: Client.Product | null;
-  products: Client.Product[];
-  checkout: Client.Cart | null;
+  product: Client.Product | undefined;
+  products: Client.Product[] | [];
+  checkout: Client.Cart | undefined;
   isCartOpen: boolean;
   isMenuOpen: boolean;
+  fetchAllProducts: () => void;
+  fetchProductByHandle: (handle: string) => void;
+  addItemtoCheckout: () => void;
+  removeLineItem: () => void;
+  closeCart: () => void;
+  openCart: () => void;
+  closeMenu: () => void;
+  openMenu: () => void;
 };
 
 const client = Client.buildClient({
@@ -15,40 +23,78 @@ const client = Client.buildClient({
 });
 
 export const ShopContext = React.createContext<ShopContextObj>({
-  product: null,
+  product: undefined,
   products: [],
-  checkout: null,
+  checkout: undefined,
   isCartOpen: false,
   isMenuOpen: false,
+  fetchAllProducts: () => {},
+  fetchProductByHandle: (handle: string) => {},
+  addItemtoCheckout: () => {},
+  removeLineItem: () => {},
+  closeCart: () => {},
+  openCart: () => {},
+  closeMenu: () => {},
+  openMenu: () => {},
 });
 
 const ShopContextProvider: React.FC<{ children: any }> = (props) => {
-  const [products, setProuducts] = useState<any[]>([]);
-  const [product, setProuduct] = useState<any>(null);
-  const contextValue: ShopContextObj = {
-    product,
-    products,
-    checkout: null,
-    isCartOpen: false,
-    isMenuOpen: false,
-  };
+  const [products, setProuducts] = useState<Client.Product[]>([]);
+  const [product, setProuduct] = useState<Client.Product>();
+  const [checkout, setCheckout] = useState<Client.Cart>();
+
+  useEffect(() => {
+    if (localStorage.checkout_id) {
+      fetchCheckout(localStorage.checkout_id);
+    } else {
+      createCheckout();
+    }
+  }, []);
 
   const createCheckout = async () => {
     const checkout = await client.checkout.create();
-    localStorage.setItem("checkout-id", checkout.id.toString());
+    localStorage.setItem("checkout_id", checkout.id.toString());
+    setCheckout(checkout);
   };
-  const fetchCheckout = async () => {};
+
+  const fetchCheckout = async (checkoutId: string) => {
+    const checkout = await client.checkout.fetch(checkoutId);
+    setCheckout(checkout);
+  };
+
   const addItemtoCheckout = async () => {};
+
   const removeLineItem = async () => {};
 
-  const fetchAllProducts = async () => {
+  const fetchAllProducts = useCallback(async () => {
     const products = await client.product.fetchAll();
     setProuducts(products);
-  };
+  }, []);
 
-  const fetchProductByHandle = async (handle: string) => {
+  const fetchProductByHandle = useCallback(async (handle: string) => {
     const product = await client.product.fetchByHandle(handle);
     setProuduct(product);
+  }, []);
+
+  const closeCart = () => {};
+  const openCart = () => {};
+  const closeMenu = () => {};
+  const openMenu = () => {};
+
+  const contextValue: ShopContextObj = {
+    product,
+    products,
+    checkout,
+    isCartOpen: false,
+    isMenuOpen: false,
+    fetchAllProducts: fetchAllProducts,
+    fetchProductByHandle: fetchProductByHandle,
+    addItemtoCheckout: addItemtoCheckout,
+    removeLineItem: removeLineItem,
+    closeCart: closeCart,
+    openCart: openCart,
+    closeMenu: closeMenu,
+    openMenu: openMenu,
   };
 
   return (

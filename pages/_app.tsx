@@ -1,13 +1,15 @@
 import { ChakraProvider } from "@chakra-ui/react";
-
+import ShopContextProvider from "../context/shopContext";
 import "../styles/globals.scss";
 import type { AppProps } from "next/app";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <ChakraProvider>
-      <Component {...pageProps} />
-    </ChakraProvider>
+    <ShopContextProvider>
+      <ChakraProvider>
+        <Component {...pageProps} />
+      </ChakraProvider>
+    </ShopContextProvider>
   );
 }
 

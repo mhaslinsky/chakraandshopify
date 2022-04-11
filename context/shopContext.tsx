@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Client from "shopify-buy";
 
+//stopped typing as the types package for shopify.buy seems out of date
+//Client.Product, Client.Cart were not accurately displaying all properties.
 type ShopContextObj = {
-  product: Client.Product | undefined;
-  products: Client.Product[] | [];
-  checkout: Client.Cart | undefined;
+  product: any | undefined;
+  products: any[] | [];
+  checkout: any | undefined;
   isCartOpen: boolean;
   isMenuOpen: boolean;
   fetchAllProducts: () => void;
   fetchProductByHandle: (handle: string) => void;
-  addItemtoCheckout: () => void;
+  addItemtoCheckout: (variantId: string, quantity: number) => void;
   removeLineItem: () => void;
   closeCart: () => void;
   openCart: () => void;
@@ -30,18 +32,20 @@ export const ShopContext = React.createContext<ShopContextObj>({
   isMenuOpen: false,
   fetchAllProducts: () => {},
   fetchProductByHandle: (handle: string) => {},
-  addItemtoCheckout: () => {},
+  addItemtoCheckout: (variantId: string, quantity: number) => {},
   removeLineItem: () => {},
   closeCart: () => {},
   openCart: () => {},
   closeMenu: () => {},
   openMenu: () => {},
 });
-
+//API methods provided by shopify JS SDK @https://shopify.github.io/js-buy-sdk/
 const ShopContextProvider: React.FC<{ children: any }> = (props) => {
-  const [products, setProuducts] = useState<Client.Product[]>([]);
-  const [product, setProuduct] = useState<Client.Product>();
-  const [checkout, setCheckout] = useState<Client.Cart>();
+  const [isCartOpen, setCartOpen] = useState<boolean>(false);
+  const [isMenuOpen, setMenuOpen] = useState<boolean>(false);
+  const [products, setProuducts] = useState<any[]>([]);
+  const [product, setProuduct] = useState<any>();
+  const [checkout, setCheckout] = useState<any>();
 
   useEffect(() => {
     if (localStorage.checkout_id) {
@@ -62,7 +66,17 @@ const ShopContextProvider: React.FC<{ children: any }> = (props) => {
     setCheckout(checkout);
   };
 
-  const addItemtoCheckout = async () => {};
+  const addItemtoCheckout = async (variantId: string, quantity: number) => {
+    const lineItemsToAdd = [{ variantId, quantity }];
+
+    const addedItem = await client.checkout.addLineItems(
+      checkout!.id,
+      lineItemsToAdd
+    );
+
+    setCheckout(addedItem);
+    setCartOpen(true);
+  };
 
   const removeLineItem = async () => {};
 
@@ -76,21 +90,29 @@ const ShopContextProvider: React.FC<{ children: any }> = (props) => {
     setProuduct(product);
   }, []);
 
-  const closeCart = () => {};
-  const openCart = () => {};
-  const closeMenu = () => {};
-  const openMenu = () => {};
+  const closeCart = () => {
+    setCartOpen(false);
+  };
+  const openCart = () => {
+    setCartOpen(true);
+  };
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+  const openMenu = () => {
+    setMenuOpen(true);
+  };
 
   const contextValue: ShopContextObj = {
     product,
     products,
     checkout,
-    isCartOpen: false,
-    isMenuOpen: false,
-    fetchAllProducts: fetchAllProducts,
-    fetchProductByHandle: fetchProductByHandle,
-    addItemtoCheckout: addItemtoCheckout,
-    removeLineItem: removeLineItem,
+    isCartOpen,
+    isMenuOpen,
+    fetchAllProducts,
+    fetchProductByHandle,
+    addItemtoCheckout,
+    removeLineItem,
     closeCart: closeCart,
     openCart: openCart,
     closeMenu: closeMenu,
